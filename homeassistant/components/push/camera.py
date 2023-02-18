@@ -12,7 +12,7 @@ import voluptuous as vol
 
 from homeassistant.components import webhook
 from homeassistant.components.camera import DOMAIN, PLATFORM_SCHEMA, STATE_IDLE, Camera
-from homeassistant.const import CONF_NAME, CONF_TIMEOUT, CONF_WEBHOOK_ID
+from homeassistant.const import CONF_NAME, CONF_UNIQUE_ID, CONF_TIMEOUT, CONF_WEBHOOK_ID
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -35,6 +35,7 @@ PUSH_CAMERA_DATA = "push_camera"
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_UNIQUE_ID, default=DEFAULT_NAME): cv.string,
         vol.Optional(CONF_BUFFER_SIZE, default=1): cv.positive_int,
         vol.Optional(CONF_TIMEOUT, default=timedelta(seconds=5)): vol.All(
             cv.time_period, cv.positive_timedelta
@@ -61,6 +62,7 @@ async def async_setup_platform(
         PushCamera(
             hass,
             config[CONF_NAME],
+            config[CONF_UNIQUE_ID],
             config[CONF_BUFFER_SIZE],
             config[CONF_TIMEOUT],
             config[CONF_IMAGE_FIELD],
@@ -94,10 +96,11 @@ async def handle_webhook(hass, webhook_id, request):
 class PushCamera(Camera):
     """The representation of a Push camera."""
 
-    def __init__(self, hass, name, buffer_size, timeout, image_field, webhook_id):
+    def __init__(self, hass, name, unique_id, buffer_size, timeout, image_field, webhook_id):
         """Initialize push camera component."""
         super().__init__()
         self._name = name
+        self._attr_unique_id = unique_id
         self._last_trip = None
         self._filename = None
         self._expired_listener = None
